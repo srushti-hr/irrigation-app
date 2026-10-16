@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AquaField{% endblock %} · Irrigation Asset Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% block body_class %}app{% endblock %}">
+{% block body %}
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('dashboard') }}">
+      <span class="brand-mark">{% include "_logo.html" %}</span>
+      <span><strong>AquaField</strong><small>Irrigation Asset Manager</small></span>
+    </a>
+    <nav>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
+        <span class="ico">◧</span> Dashboard</a>
+      <div class="nav-label">Entities</div>
+      {% for k, e in ENTITIES.items() %}
+      <a href="{{ url_for('entity_list', key=k) }}"
+         class="{{ 'active' if request.view_args and request.view_args.get('key') == k }}">
+        <span class="ico">{{ e.icon }}</span> {{ e.title }}</a>
+      {% endfor %}
+      <div class="nav-label">Analysis</div>
+      <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint == 'reports' }}">
+        <span class="ico">∑</span> SQL Reports</a>
+    </nav>
+    <div class="user-box">
+      <div class="avatar">{{ user.full_name[:1] }}</div>
+      <div class="who">
+        <strong>{{ user.full_name }}</strong>
+        <small>@{{ user.username }} · <span class="role role-{{ user.role }}">{{ user.role }}</span></small>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="icon-btn" title="Log out" aria-label="Log out">⏻</button>
+      </form>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% include "_flash.html" %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
+<script>
+  // Confirm before deleting
+  document.querySelectorAll('form[data-confirm]').forEach(f =>
+    f.addEventListener('submit', e => { if (!confirm(f.dataset.confirm)) e.preventDefault(); }));
+  // Close flash messages
+  document.querySelectorAll('.flash .x').forEach(b =>
+    b.addEventListener('click', () => b.parentElement.remove()));
+</script>
+</body>
+</html>

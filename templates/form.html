@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if editing else 'Add' }} {{ ent.singular|lower }}{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <a class="back" href="{{ url_for('entity_list', key=key) }}">← {{ ent.title }}</a>
+    <h1>{{ 'Edit ' ~ ent.singular|lower ~ ' ' ~ record[ent.pk] if editing else 'Add ' ~ ent.singular|lower }}</h1>
+    <p class="muted">{{ 'Runs an UPDATE' if editing else 'Runs an INSERT' }} on <code>{{ ent.table|upper }}</code>. Oracle constraints and triggers check every value.</p>
+  </div>
+</header>
+
+<form class="card form" method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <div class="form-grid">
+  {% for c in ent.columns %}
+    {% set v = record.get(c.name) %}
+    {% set is_pk = c.name == ent.pk %}
+    <label class="{{ 'pk-field' if is_pk }}">
+      <span>{{ c.label }}{% if c.required %} <b class="req">*</b>{% endif %}{% if is_pk %} <em>primary key</em>{% endif %}</span>
+
+      {% if is_pk and editing %}
+        <input value="{{ v }}" disabled>
+      {% elif c.type == 'select' %}
+        <select name="{{ c.name }}" {{ 'required' if c.required }}>
+          <option value="">{{ '— choose —' if c.required else '— none —' }}</option>
+          {% for o in c.options %}<option {{ 'selected' if v == o }}>{{ o }}</option>{% endfor %}
+        </select>
+      {% elif c.type == 'fk' %}
+        <select name="{{ c.name }}" {{ 'required' if c.required }}>
+          <option value="">{{ '— choose —' if c.required else '— none —' }}</option>
+          {% for val, lab in fk[c.name] %}<option value="{{ val }}" {{ 'selected' if v|string == val|string }}>{{ lab }}</option>{% endfor %}
+        </select>
+        <small>Foreign key → {{ c.fk[0]|upper }}</small>
+      {% elif c.type == 'date' %}
+        <input type="date" name="{{ c.name }}" value="{{ date_value(v) }}" {{ 'required' if c.required }}>
+      {% elif c.type == 'number' %}
+        <input type="number" name="{{ c.name }}" value="{{ '' if v is none else (v|float == v|int and v|int or v) }}"
+               step="{{ c.step or 'any' }}" {% if c.min %}min="{{ c.min }}"{% endif %} {% if c.max %}max="{{ c.max }}"{% endif %}
+               {{ 'required' if c.required }}>
+      {% else %}
+        <input type="{{ 'email' if c.type == 'email' else 'text' }}" name="{{ c.name }}" value="{{ v or '' }}"
+               {% if c.maxlength %}maxlength="{{ c.maxlength }}"{% endif %}
+               {% if c.pattern %}pattern="{{ c.pattern }}" title="{{ c.title }}"{% endif %}
+               {% if is_pk and ent.pk_hint %}placeholder="{{ ent.pk_hint }}"{% endif %}
+               {{ 'required' if c.required }}>
+      {% endif %}
+    </label>
+  {% endfor %}
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-ghost" href="{{ url_for('entity_list', key=key) }}">Cancel</a>
+    <button class="btn btn-primary">{{ 'Save changes' if editing else 'Add ' ~ ent.singular|lower }}</button>
+  </div>
+  <p class="hint"><b class="req">*</b> required (NOT NULL). Tip for the demo: switch off browser checks with the
+    <code>novalidate</code> toggle below to watch Oracle's own constraints reject bad data.</p>
+  <label class="novalidate-toggle"><input type="checkbox" onchange="this.form.noValidate=this.checked"> Skip browser validation (let Oracle validate)</label>
+</form>
+{% endblock %}

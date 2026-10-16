@@ -1,0 +1,15 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for cat, msg in messages %}
+      {% if cat == 'sql' %}
+      <div class="flash flash-sql"><span class="tag">SQL executed</span><pre>{{ msg }}</pre><button class="x" aria-label="Close">×</button></div>
+      {% elif cat == 'oracle' %}
+      <div class="flash flash-oracle"><span class="tag">Oracle said</span><code>{{ msg }}</code><button class="x" aria-label="Close">×</button></div>
+      {% else %}
+      <div class="flash flash-{{ cat }}">{{ msg }}<button class="x" aria-label="Close">×</button></div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}

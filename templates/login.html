@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block body_class %}auth{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <section class="auth-art">
+    <div class="auth-brand">{% include "_logo.html" %}<span>AquaField</span></div>
+    <div class="auth-copy">
+      <h1>Every pump, field and drop of water, in one place.</h1>
+      <p>Track irrigation pumps, the fields they serve, leases, technicians, servicing and daily irrigation runs, all on Oracle.</p>
+    </div>
+    <svg class="fields-art" viewBox="0 0 600 260" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 120 C150 80 300 150 600 90 V260 H0Z" fill="#2c8a5f" opacity=".55"/>
+      <path d="M0 170 C200 130 380 200 600 150 V260 H0Z" fill="#1f6f4a"/>
+      <g stroke="#7fd1ae" stroke-width="2" opacity=".5" fill="none">
+        <path d="M0 200 C200 165 380 230 600 185"/><path d="M0 225 C200 192 380 252 600 212"/><path d="M0 248 C200 218 380 270 600 238"/>
+      </g>
+    </svg>
+  </section>
+
+  <section class="auth-panel">
+    <form class="auth-form" method="post" novalidate>
+      <h2>Log in</h2>
+      <p class="muted">Use your AquaField account to continue.</p>
+      {% include "_flash.html" %}
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <label>Username
+        <input name="username" value="{{ username or '' }}" autocomplete="username" required autofocus>
+      </label>
+      <label>Password
+        <span class="pw">
+          <input name="password" type="password" autocomplete="current-password" required id="pw">
+          <button type="button" class="pw-toggle" onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button>
+        </span>
+      </label>
+      <button class="btn btn-primary btn-block">Log in</button>
+      <p class="switch">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+      <div class="demo-creds">
+        <strong>Demo accounts</strong>
+        <span><code>admin</code> / <code>admin123</code>: full access</span>
+        <span><code>viewer</code> / <code>viewer123</code>: read-only</span>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

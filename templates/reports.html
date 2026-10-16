@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}SQL Reports{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>SQL Reports</h1>
+    <p class="muted">The functions, GROUP BY, HAVING, subquery and join queries from the project report, run live.</p>
+  </div>
+</header>
+
+<div class="reports">
+  <nav class="report-nav card">
+    {% for gname, items in groups.items() %}
+      <div class="nav-label">{{ gname }}</div>
+      {% for r in items %}
+      <a href="{{ url_for('reports', run=r.key) }}" class="{{ 'active' if r.key == rep.key }}">{{ r.title }}</a>
+      {% endfor %}
+    {% endfor %}
+  </nav>
+
+  <div class="report-body">
+    <div class="card">
+      <div class="card-head">
+        <div><span class="pill">{{ rep.group }}</span><h3>{{ rep.title }}</h3></div>
+      </div>
+      <pre class="sql">{{ rep.sql }}</pre>
+    </div>
+
+    <div class="card flush">
+      {% if error %}
+        <div class="flash flash-error">{{ error }}</div>
+      {% else %}
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr>{% for c in cols %}<th>{{ c|upper }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for r in rows %}
+            <tr>{% for c in cols %}<td>{{ auto(r[c], c) }}</td>{% endfor %}</tr>
+          {% else %}
+            <tr><td colspan="{{ cols|length or 1 }}" class="empty">no rows selected</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="rowcount">{{ rows|length }} row{{ '' if rows|length == 1 else 's' }} selected.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3>Run a stored procedure: <code>sp_raise_rent</code></h3>
+      <p class="muted">Raises the annual rent on every lease held by one owner and returns how many leases changed (an OUT parameter). Rejects percentages outside 0–50 with <code>RAISE_APPLICATION_ERROR</code>.</p>
+      {% if user.role == 'admin' %}
+      <form class="inline-form" method="post" action="{{ url_for('raise_rent') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <label>Owner
+          <select name="owner_id">{% for o in owners %}<option value="{{ o.owner_id }}">{{ o.owner_id }} – {{ o.owner_name }}</option>{% endfor %}</select>
+        </label>
+        <label>Raise by (%)
+          <input type="number" name="percent" value="5" step="0.5">
+        </label>
+        <button class="btn btn-primary">EXECUTE sp_raise_rent</button>
+      </form>
+      {% else %}
+      <p class="readonly-note">Log in as admin to run the procedure.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

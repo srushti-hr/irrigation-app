@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ ent.title }}{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>{{ ent.title }}</h1>
+    <p class="muted">Table <code>{{ ent.table|upper }}</code> · {{ rows|length }} row{{ '' if rows|length == 1 else 's' }}{{ ' matching "' ~ q ~ '"' if q }}</p>
+  </div>
+  {% if user.role == 'admin' %}
+  <a class="btn btn-primary" href="{{ url_for('entity_new', key=key) }}">+ Add {{ ent.singular|lower }}</a>
+  {% else %}
+  <span class="readonly-note">Read-only account</span>
+  {% endif %}
+</header>
+
+<form class="toolbar" method="get">
+  <select name="col" aria-label="Search in">
+    <option value="">All columns</option>
+    {% for c in ent.columns %}
+    <option value="{{ c.name }}" {{ 'selected' if search_col == c.name }}>{{ c.label }}</option>
+    {% endfor %}
+  </select>
+  <input type="search" name="q" value="{{ q }}" placeholder="Search {{ ent.title|lower }}…" aria-label="Search">
+  <input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="dir" value="{{ dir }}">
+  <button class="btn">Search</button>
+  {% if q %}<a class="btn btn-ghost" href="{{ url_for('entity_list', key=key) }}">Clear</a>{% endif %}
+</form>
+
+<div class="card flush">
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          {% for c in cols %}
+          {% set next_dir = 'desc' if sort == c.name and dir == 'asc' else 'asc' %}
+          <th class="{{ 'r' if c.type == 'number' or c.sql }}">
+            <a href="{{ url_for('entity_list', key=key, q=q, col=search_col, sort=c.name, dir=next_dir) }}"
+               class="sort {{ 'on' if sort == c.name }}">{{ c.label }}{% if sort == c.name %} {{ '▲' if dir == 'asc' else '▼' }}{% endif %}</a>
+          </th>
+          {% endfor %}
+          {% if user.role == 'admin' %}<th class="r">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          {% for c in cols %}
+          <td class="{{ 'r num' if c.type == 'number' or c.sql }} {{ 'pk' if c.name == ent.pk }}">
+            {% if c.type == 'select' and r[c.name] %}<span class="pill pill-{{ r[c.name]|lower|replace(' ', '-') }}">{{ r[c.name] }}</span>
+            {% else %}{{ cell(r[c.name], c) }}{% endif %}
+          </td>
+          {% endfor %}
+          {% if user.role == 'admin' %}
+          <td class="r actions">
+            <a class="btn btn-sm" href="{{ url_for('entity_edit', key=key, pk=r[ent.pk]) }}">Edit</a>
+            <form method="post" action="{{ url_for('entity_delete', key=key, pk=r[ent.pk]) }}"
+                  data-confirm="Delete {{ ent.singular|lower }} {{ r[ent.pk] }}? This cannot be undone.">
+              <input type="hidden" name="csrf" value="{{ csrf_token }}">
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+      {% else %}
+        <tr><td colspan="{{ cols|length + 1 }}" class="empty">No rows found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<details class="sql-peek">
+  <summary>Show the SELECT query behind this page</summary>
+  <pre>{{ sql }}</pre>
+</details>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Live figures from the Oracle database.</p>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="stat"><span>Total acreage</span><strong>{{ totals.acres|num }}</strong><small>acres across {{ counts.fields }} fields</small></div>
+  <div class="stat"><span>Pump capacity</span><strong>{{ totals.gpm|num }}</strong><small>GPM from {{ counts.pumps }} pumps</small></div>
+  <div class="stat"><span>Water used</span><strong>{{ totals.water|num }}</strong><small>gallons over {{ counts.schedule }} runs</small></div>
+  <div class="stat accent"><span>Maintenance cost</span><strong>{{ total_maint|num(money=True) }}</strong><small>via <code>fn_pump_maintenance_cost</code></small></div>
+</section>
+
+<section class="tiles">
+  {% for k, e in ENTITIES.items() %}
+  <a class="tile" href="{{ url_for('entity_list', key=k) }}">
+    <span class="ico">{{ e.icon }}</span>
+    <strong>{{ counts[k] }}</strong>
+    <small>{{ e.title }}</small>
+  </a>
+  {% endfor %}
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h3>Maintenance cost by pump</h3>
+    {% set top = (pump_costs|map(attribute='cost')|map('float')|max) or 1 %}
+    <ul class="bars">
+      {% for p in pump_costs %}
+      <li>
+        <span class="bar-label">{{ p.pump_serial }} <em>{{ p.fuel_type }}</em></span>
+        <span class="bar-track"><span class="bar {{ 'bar-diesel' if p.fuel_type == 'Diesel' else 'bar-electric' }}"
+              style="width: {{ ((p.cost|float) / top * 100)|round(1) }}%"></span></span>
+        <span class="bar-val">{{ p.cost|num(money=True) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="legend"><i class="sw bar-diesel"></i>Diesel <i class="sw bar-electric"></i>Electric</p>
+  </div>
+
+  <div class="card">
+    <h3>Acreage by crop</h3>
+    {% set topa = (crops|map(attribute='acres')|map('float')|max) if crops else 1 %}
+    <ul class="bars">
+      {% for c in crops %}
+      <li>
+        <span class="bar-label">{{ c.crop }}</span>
+        <span class="bar-track"><span class="bar bar-crop" style="width: {{ ((c.acres|float) / topa * 100)|round(1) }}%"></span></span>
+        <span class="bar-val">{{ c.acres|num }} ac</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h3>Latest service jobs</h3>
+    <a class="link" href="{{ url_for('entity_list', key='maintenance', sort='service_date', dir='desc') }}">View all →</a>
+  </div>
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Log</th><th>Date</th><th>Pump</th><th>Technician</th><th>Type</th><th class="r">Total cost</th></tr></thead>
+      <tbody>
+      {% for r in recent %}
+        <tr>
+          <td>{{ r.log_id }}</td><td>{{ r.service_date|date }}</td><td>{{ r.pump_serial }}</td>
+          <td>{{ r.tech_name }}</td><td><span class="pill pill-{{ (r.service_type or '')|lower }}">{{ r.service_type or '—' }}</span></td>
+          <td class="r">{{ r.total_cost|num(money=True) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty">No service jobs yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
